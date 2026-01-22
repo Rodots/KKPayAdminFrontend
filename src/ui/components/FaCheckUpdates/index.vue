@@ -60,12 +60,10 @@ function stopInterval() {
 
 function handleVisibilitychange() {
   if (document.hidden) {
-    stop()
+    stopInterval()
   }
   else {
-    checkUpdates().finally(() => {
-      startInterval()
-    })
+    startInterval()
   }
 }
 
