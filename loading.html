@@ -1,0 +1,50 @@
+<style>
+.loader {
+   --s: 40px;
+   height: calc(var(--s)*0.9);
+   width: calc(var(--s)*5);
+  --v1:transparent,#000 0.5deg 108deg,#0000 109deg;
+  --v2:transparent,#000 0.5deg  36deg,#0000  37deg;
+  mask:
+    conic-gradient(from 54deg  at calc(var(--s)*0.68) calc(var(--s)*0.57),var(--v1)),
+    conic-gradient(from 90deg  at calc(var(--s)*0.02) calc(var(--s)*0.35),var(--v2)),
+    conic-gradient(from 126deg at calc(var(--s)*0.5)  calc(var(--s)*0.7) ,var(--v1)),
+    conic-gradient(from 162deg at calc(var(--s)*0.5)  0                  ,var(--v2));
+  mask-size: var(--s) var(--s);
+  mask-composite: xor,destination-over;
+  mask-composite: exclude,add;
+  mask-repeat:repeat-x;
+  background:linear-gradient(#ffb940 0 0) left/0% 100% #ddd no-repeat;
+  animation: l20 2s infinite linear;
+}
+@keyframes l20 {
+    90%,100% {background-size:100% 100%}
+}
+
+.loading-container .name {
+  position: relative;
+  margin-top: 20px;
+  font-size: 24px;
+  line-height: 1.5;
+}
+
+.loading-container .tips {
+  position: relative;
+  margin-top: 10px;
+  font-size: 16px;
+  opacity: 0.5;
+  line-height: 1.5;
+}
+
+.loading-container .tips::after {
+  position: absolute;
+  padding-left: 5px;
+  content: "…";
+}
+</style>
+
+<div class="loading-container">
+  <div class="loader"></div>
+  <div class="name">%VITE_APP_TITLE%</div>
+  <div class="tips">载入中</div>
+</div>
