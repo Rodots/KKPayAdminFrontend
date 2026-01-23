@@ -34,7 +34,7 @@ function getInfo() {
     if (res.data.allow_auto_refund) {
       form.value.refund_type = 'auto'
     }
-    if (res.data.trade_state !== 'TRADE_SUCCESS') {
+    if (!['TRADE_SUCCESS', 'TRADE_REFUND'].includes(res.data.trade_state)) {
       form.value.allow_refund = true
     }
   }).finally(() => {

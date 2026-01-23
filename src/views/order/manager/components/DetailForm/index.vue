@@ -30,8 +30,8 @@ defineExpose({ getInfo })
 // 订单状态判断
 const stateUtils = {
   isSuccess: (state: string) => state === 'TRADE_SUCCESS',
-  isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(state),
-  isFrozenOrSuccess: (state: string) => ['TRADE_FROZEN', 'TRADE_SUCCESS'].includes(state),
+  isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
+  isFrozenOrSuccess: (state: string) => ['TRADE_FROZEN', 'TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
   isFrozen: (state: string) => state === 'TRADE_FROZEN',
 }
 
@@ -119,7 +119,7 @@ const onDelete = () => emit('delete')
           <span v-else>未知</span>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="支付状态">
-          <ElTag type="success">
+          <ElTag :type="orderDetail.trade_state === 'TRADE_SUCCESS' ? 'success' : (['TRADE_REFUND', 'TRADE_FINISHED', 'TRADE_FROZEN'].includes(orderDetail.trade_state) ? 'danger' : 'info')">
             {{ orderDetail.trade_state_text ?? '未知' }}
           </ElTag>
         </ElDescriptionsItem>

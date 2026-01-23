@@ -112,9 +112,9 @@ function getDataList() {
 
 const stateUtils = {
   isSuccess: (state: string) => state === 'TRADE_SUCCESS',
-  isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(state),
-  isSuccessOrFrozen: (state: string) => ['TRADE_SUCCESS', 'TRADE_FROZEN'].includes(state),
-  isWaitPayOrClosed: (state: string) => ['WAIT_PAY', 'TRADE_CLOSED'].includes(state),
+  isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
+  isSuccessOrFrozen: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED', 'TRADE_FROZEN'].includes(state),
+  isWaitPayOrClosed: (state: string) => ['WAIT_PAY', 'WAIT_BUYER_PAY', 'TRADE_CLOSED'].includes(state),
   isFrozen: (state: string) => state === 'TRADE_FROZEN',
 }
 
@@ -405,7 +405,8 @@ function handleMoreOperating(command: string, row: any) {
                 <ElOption label="等待付款" value="WAIT_BUYER_PAY" />
                 <ElOption label="交易关闭" value="TRADE_CLOSED" />
                 <ElOption label="交易成功" value="TRADE_SUCCESS" />
-                <ElOption label="交易完结" value="TRADE_FINISHED" />
+                <ElOption label="部分退款" value="TRADE_REFUND" />
+                <ElOption label="全额退款" value="TRADE_FINISHED" />
                 <ElOption label="交易冻结" value="TRADE_FROZEN" />
               </ElSelect>
             </ElFormItem>
@@ -511,7 +512,10 @@ function handleMoreOperating(command: string, row: any) {
             支付状态[结算状态]<br>通知状态/付款耗时
           </template>
           <template #default="{ row }">
-            {{ row.trade_state_text }} <span class="text-orange">[{{ row.settle_state_text }}]</span>
+            <span :class="{ 'text-green font-bold': row.trade_state === 'TRADE_SUCCESS', 'text-red font-bold': ['TRADE_REFUND', 'TRADE_FINISHED', 'TRADE_FROZEN'].includes(row.trade_state) }">
+              {{ row.trade_state_text }}
+            </span>
+            <span class="text-orange"> [{{ row.settle_state_text }}]</span>
             <div v-if="row.payment_time">
               <span :class="row.notify_state === 'SUCCESS' ? 'text-green' : 'text-red'">{{ row.notify_state_text }}</span> <span class="text-blue">[{{ row.payment_duration }}]</span>
             </div>
@@ -580,3 +584,9 @@ function handleMoreOperating(command: string, row: any) {
     </FaPageMain>
   </div>
 </template>
+
+<style>
+.el-table .el-table__cell {
+  padding: 4px 0;
+}
+</style>
