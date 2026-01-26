@@ -34,7 +34,7 @@ function iconName(isActive: boolean, icon?: string, activeIcon?: string) {
         <component :is="useSlots('header-start')" />
         <Logo class="title" />
         <component :is="useSlots('header-after-logo')" />
-        <FaScrollArea :scrollbar="false" mask horizontal gradient-color="var(--g-header-bg)" class="menu-container h-full flex-1">
+        <FaScrollArea :scrollbar="false" mask horizontal gradient-color="var(--g-header-bg)" class="menu-container h-full flex-1 overscroll-contain">
           <!-- 顶部模式 -->
           <div
             v-if="settingsStore.settings.menu.mode === 'head'" class="menu h-full flex of-hidden transition-all" :class="{

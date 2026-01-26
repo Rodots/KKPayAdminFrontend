@@ -142,7 +142,7 @@ function handlePanelMouseenter() {
   <Item ref="itemRef" :unique-key="uniqueKey" :item="menu" :level="level" :sub-menu="hasChildren" @click="handleClick" @mouseenter="handleMouseenter" @mouseleave="handleMouseleave" />
   <Teleport v-if="hasChildren" to="body" :disabled="level !== 0">
     <Transition v-if="level === 0" v-bind="transitionClass" v-on="transitionEvent">
-      <FaScrollArea v-show="opened" ref="subMenuRef" mask class="sub-menu z-3000 w-150 border rounded-lg bg-[var(--g-sub-sidebar-bg)] shadow-xl fixed! 2xl:w-200" :class="{ dark: rootMenu.props.dark }" @mouseenter="handlePanelMouseenter" @mouseleave="handleMouseleave">
+      <FaScrollArea v-show="opened" ref="subMenuRef" mask class="sub-menu z-3000 w-150 overscroll-contain border rounded-lg bg-[var(--g-sub-sidebar-bg)] shadow-xl fixed! 2xl:w-200" :class="{ dark: rootMenu.props.dark }" @mouseenter="handlePanelMouseenter" @mouseleave="handleMouseleave">
         <div class="columns-3 p-2 px-3 2xl:columns-4">
           <div v-for="item in menu.children" :key="item.path ?? rootMenu.getUseId(item)" class="w-full break-inside-avoid">
             <SubMenu v-if="item.meta?.menu !== false" :unique-key="[...uniqueKey, item.path ?? rootMenu.getUseId(item)]" :menu="item" :level="level + 1" />

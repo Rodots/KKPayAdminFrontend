@@ -27,7 +27,7 @@ const showAll = ref(false)
       ]" class="m-3 mb-0"
     >
       <template #message>
-        <FaScrollArea :scrollbar="false" mask class="max-h-300px">
+        <FaScrollArea :scrollbar="false" mask class="max-h-300px overscroll-contain">
           <div class="flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-background-color hover-bg-muted">
             <div class="size-6 flex-center flex-shrink-0 rounded-full bg-blue">
               <FaIcon name="i-ri:mail-fill" class="size-4 text-white" />

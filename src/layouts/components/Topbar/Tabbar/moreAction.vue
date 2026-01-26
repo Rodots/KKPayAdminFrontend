@@ -118,7 +118,7 @@ function handleClick(fullPath: string) {
     <template #footer>
       <div class="max-h-80 w-40 flex flex-col gap-2">
         <input ref="searchInputRef" v-model="searchInput" placeholder="搜索..." class="h-8 border border-input rounded-md bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none">
-        <FaScrollArea :scrollbar="false" mask gradient-color="hsl(var(--popover))">
+        <FaScrollArea :scrollbar="false" mask gradient-color="hsl(var(--popover))" class="overscroll-contain">
           <div ref="dropdownTabContainerRef" class="tabs space-y-1" :class="{ dragging: isDragging }">
             <div
               v-for="element in resultList" :key="element.tabMerge === 'routeName' && element.routeName ? element.routeName : element.tabId" class="relative h-8 rounded-md px-2 tab" :class="{

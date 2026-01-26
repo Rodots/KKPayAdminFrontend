@@ -217,7 +217,7 @@ function handleMouseleave() {
         v-if="opened" ref="subMenuRef" :scrollbar="false" :mask="rootMenu.isMenuPopup" :class="cn('sub-menu static h-[calc-size(auto,size)] rounded-lg will-change-transform', {
           'bg-[var(--g-sub-sidebar-bg)]': rootMenu.isMenuPopup,
           'border shadow-xl fixed z-3000 w-[200px]': rootMenu.isMenuPopup,
-          'py-1': rootMenu.isMenuPopup,
+          'py-1 overscroll-contain': rootMenu.isMenuPopup,
           'dark': rootMenu.props.dark,
         })"
       >

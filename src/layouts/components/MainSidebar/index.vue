@@ -53,7 +53,7 @@ function iconName(isActive: boolean, icon?: string, activeIcon?: string) {
       <component :is="useSlots('main-sidebar-top')" />
       <Logo :show-title="false" class="sidebar-logo" />
       <component :is="useSlots('main-sidebar-after-logo')" />
-      <FaScrollArea :scrollbar="false" mask gradient-color="var(--g-main-sidebar-bg)" class="menu flex-1">
+      <FaScrollArea :scrollbar="false" mask gradient-color="var(--g-main-sidebar-bg)" class="menu flex-1 overscroll-contain">
         <!-- 侧边栏模式（含主导航） -->
         <div
           v-if="settingsStore.settings.menu.mode === 'side' || (settingsStore.mode === 'mobile' && settingsStore.settings.menu.mode !== 'single')" class="w-full flex flex-col of-hidden py-1 transition-all -mt-2" :class="{
