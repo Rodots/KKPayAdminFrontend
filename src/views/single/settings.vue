@@ -42,6 +42,11 @@ const paymentForm = ref({
   ip_order_limit: '',
   account_order_limit: '',
   api_refund_fee_bearer: 'merchant' as 'platform' | 'merchant',
+  alipay_get_user_info_wap: 'off' as 'on' | 'off',
+  alipay_get_user_info_qrcode: 'off' as 'on' | 'off',
+  alipay_get_user_info_common_account: '',
+  alipay_get_user_info_mode: 'current' as 'common' | 'current',
+  alipay_get_user_info_scope: 'auth_base' as 'auth_base' | 'auth_user',
 })
 
 const emailForm = ref({
@@ -101,14 +106,19 @@ const validationSchema = z.object({
   max_amount: z.string().refine(val => !val || Number.parseFloat(val) < 100000000, { message: '最大金额必须是有效的正数' }),
   order_expire_time: createOptionalRangeValidator(60, 86400, '订单过期时间必须在60-86400秒之间'),
   diy_order_subject: z.string().max(255, '自定义商品名称不能超过255个字符').optional(),
-  blocked_keywords: z.string().optional(),
-  blocked_keywords_prompt: z.string().max(500, '拦截提示内容不能超过500个字符').optional(),
+  subject_blocked_keywords: z.string().optional(),
+  subject_blocked_keywords_prompt: z.string().max(500, '拦截提示内容不能超过500个字符').optional(),
   enable_merchant_channel_whitelist: z.enum(['off', 'on']),
   qrcode_page_hide_order_subject: z.enum(['off', 'on']),
   blacklist_order_action: z.enum(['0', '1']),
   ip_order_limit: createOptionalRangeValidator(1, 10000, '单IP限制必须在1-10000之间'),
   account_order_limit: createOptionalRangeValidator(1, 10000, '单账户限制必须在1-10000之间'),
   api_refund_fee_bearer: z.enum(['platform', 'merchant']),
+  alipay_get_user_info_wap: z.enum(['on', 'off']),
+  alipay_get_user_info_qrcode: z.enum(['on', 'off']),
+  alipay_get_user_info_common_account: z.string().optional(),
+  alipay_get_user_info_mode: z.enum(['common', 'current']),
+  alipay_get_user_info_scope: z.enum(['auth_base', 'auth_user']),
   // 邮件配置
   smtp_host: z.string().optional(),
   smtp_port: createPortValidator('端口必须在1-65535之间'),
@@ -312,20 +322,28 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="8">
-            <ElFormItem label="回调专用地址" :error="getFieldError('notify_url')">
+            <ElFormItem label="回调专用网址" :error="getFieldError('notify_url')">
               <template #label>
-                <span>回调专用地址</span>
+                <span>回调专用网址</span>
                 <ElTooltip content="必须以 http(s):// 开头，以 / 结尾，填错会导致订单无法回调（不会填请留空）" placement="top">
                   <ElIcon class="ml-1 cursor-help">
                     <i class="i-ep-question-filled" />
                   </ElIcon>
                 </ElTooltip>
               </template>
-              <ElInput v-model="systemForm.notify_url" placeholder="请输入回调专用地址（可留空）" />
+              <ElInput v-model="systemForm.notify_url" placeholder="请输入回调专用网址（可留空）如：https://example.com/" />
             </ElFormItem>
           </ElCol>
           <ElCol :md="8">
-            <ElFormItem label="公共静态资源库" :error="getFieldError('cdn_static_url')">
+            <ElFormItem :error="getFieldError('cdn_static_url')">
+              <template #label>
+                <span>前端公共静态资源库</span>
+                <ElTooltip content="部分支付页面会需要加载静态资源，如果服务器带宽不高可选择外部资源加速，如出现付款完无法跳转或不出码的情况，可尝试更换资源库" placement="top">
+                  <ElIcon class="ml-1 cursor-help">
+                    <i class="i-ep-question-filled" />
+                  </ElIcon>
+                </ElTooltip>
+              </template>
               <ElSelect v-model="systemForm.cdn_static_url" placeholder="请选择公共静态资源库 CDN 提供方" class="w-full">
                 <ElOption v-for="item in cdnOptions" :key="item.value" :label="item.label" :value="item.value" />
               </ElSelect>
@@ -374,7 +392,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="3">
-            <ElFormItem label="商户通道白名单">
+            <ElFormItem label="商户通道白名单" :error="getFieldError('enable_merchant_channel_whitelist')">
               <ElRadioGroup v-model="paymentForm.enable_merchant_channel_whitelist">
                 <ElRadioButton label="启用" value="on" />
                 <ElRadioButton label="禁用" value="off" />
@@ -382,7 +400,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="3">
-            <ElFormItem label="扫码页面商品名称">
+            <ElFormItem label="扫码页面商品名称" :error="getFieldError('qrcode_page_hide_order_subject')">
               <ElRadioGroup v-model="paymentForm.qrcode_page_hide_order_subject">
                 <ElRadioButton label="显示" value="on" />
                 <ElRadioButton label="隐藏" value="off" />
@@ -404,7 +422,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="24">
-            <ElFormItem>
+            <ElFormItem :error="getFieldError('subject_blocked_keywords')">
               <template #label>
                 <span>商品名称屏蔽关键词</span>
                 <ElTooltip content="多个关键词用竖线|分隔，创建订单时如商品名称包含这些关键词将被拦截" placement="top">
@@ -422,7 +440,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="6">
-            <ElFormItem>
+            <ElFormItem :error="getFieldError('blacklist_order_action')">
               <template #label>
                 <span>黑名单用户支付订单后</span>
                 <ElTooltip content="有些支付网关无法在支付前拦截黑名单付款，可以设置该选项，当上游返回了黑名单账号信息后执行对应的操作" placement="top">
@@ -463,6 +481,51 @@ async function saveAllSettings() {
               </ElSelect>
             </ElFormItem>
           </ElCol>
+          <ElCol :md="3">
+            <ElFormItem label="支付宝手机网站支付获取用户信息">
+              <ElRadioGroup v-model="paymentForm.alipay_get_user_info_wap">
+                <ElRadioButton label="启用" value="on" />
+                <ElRadioButton label="禁用" value="off" />
+              </ElRadioGroup>
+            </ElFormItem>
+          </ElCol>
+          <ElCol :md="3">
+            <ElFormItem label="支付宝扫码支付获取用户信息">
+              <ElRadioGroup v-model="paymentForm.alipay_get_user_info_qrcode">
+                <ElRadioButton label="启用" value="on" />
+                <ElRadioButton label="禁用" value="off" />
+              </ElRadioGroup>
+            </ElFormItem>
+          </ElCol>
+          <ElCol :md="6">
+            <ElFormItem label="支付宝获取用户信息公用子账户" :error="getFieldError('alipay_get_user_info_common_account')">
+              <ElInput v-model="paymentForm.alipay_get_user_info_common_account" placeholder="请填写支付宝通道子账户ID" type="number" />
+            </ElFormItem>
+          </ElCol>
+          <ElCol :md="6">
+            <ElFormItem label="支付宝获取用户信息模式" :error="getFieldError('alipay_get_user_info_mode')">
+              <ElSelect v-model="paymentForm.alipay_get_user_info_mode" placeholder="请选择模式">
+                <ElOption value="common" label="使用设定的公用子账户" />
+                <ElOption value="current" label="使用当前发起支付的子账户" />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
+          <ElCol :md="6">
+            <ElFormItem label="支付宝获取用户手机号" :error="getFieldError('alipay_get_user_info_scope')">
+              <template #label>
+                <span>支付宝获取用户手机号</span>
+                <ElTooltip content="需要先在支付宝应用里面隐私申请手机号码字段，开启后，可在支付前获取用户手机号并保存。" placement="top">
+                  <ElIcon class="ml-1 cursor-help">
+                    <i class="i-ep-question-filled" />
+                  </ElIcon>
+                </ElTooltip>
+              </template>
+              <ElSelect v-model="paymentForm.alipay_get_user_info_scope" placeholder="请选择是否需要获取用户手机号">
+                <ElOption value="auth_user" label="获取" />
+                <ElOption value="auth_base" label="不获取" />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
         </ElRow>
       </FaPageMain>
 
@@ -479,7 +542,7 @@ async function saveAllSettings() {
         </template>
         <ElRow :gutter="20">
           <ElCol :md="8">
-            <ElFormItem label="SMTP 服务器">
+            <ElFormItem label="SMTP 服务器" :error="getFieldError('smtp_host')">
               <ElInput v-model="emailForm.smtp_host" placeholder="请输入 SMTP 服务器地址" />
             </ElFormItem>
           </ElCol>
@@ -489,7 +552,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="4">
-            <ElFormItem label="加密方式">
+            <ElFormItem label="加密方式" :error="getFieldError('smtp_encryption')">
               <ElSelect v-model="emailForm.smtp_encryption" class="w-full">
                 <ElOption label="SSL" value="ssl" />
                 <ElOption label="TLS" value="tls" />
@@ -503,12 +566,12 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="12">
-            <ElFormItem label="SMTP 账号">
+            <ElFormItem label="SMTP 账号" :error="getFieldError('smtp_user')">
               <ElInput v-model="emailForm.smtp_user" placeholder="请输入 SMTP 账号（邮箱地址）" />
             </ElFormItem>
           </ElCol>
           <ElCol :md="12">
-            <ElFormItem label="SMTP 密码">
+            <ElFormItem label="SMTP 密码" :error="getFieldError('smtp_password')">
               <ElInput v-model="emailForm.smtp_password" type="password" placeholder="请输入 SMTP 密码或授权码" show-password />
             </ElFormItem>
           </ElCol>
@@ -533,7 +596,7 @@ async function saveAllSettings() {
         </template>
         <ElRow :gutter="20">
           <ElCol :md="4">
-            <ElFormItem label="订单回调代理功能开关">
+            <ElFormItem label="订单回调代理功能开关" :error="getFieldError('proxy_switch')">
               <ElSelect v-model="proxyForm.proxy_switch" placeholder="请选择功能开关">
                 <ElOption value="off" label="禁用" />
                 <ElOption value="on" label="启用" />
@@ -541,7 +604,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="12">
-            <ElFormItem label="代理服务器IP地址">
+            <ElFormItem label="代理服务器IP地址" :error="getFieldError('proxy_host')">
               <ElInput v-model="proxyForm.proxy_host" placeholder="请输入代理服务器IP地址" />
             </ElFormItem>
           </ElCol>
@@ -551,7 +614,7 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="4">
-            <ElFormItem label="代理协议">
+            <ElFormItem label="代理协议" :error="getFieldError('proxy_protocol')">
               <ElSelect v-model="proxyForm.proxy_protocol" placeholder="请选择代理协议">
                 <ElOption value="http" label="HTTP" />
                 <ElOption value="https" label="HTTPS" />
@@ -560,12 +623,12 @@ async function saveAllSettings() {
             </ElFormItem>
           </ElCol>
           <ElCol :md="12">
-            <ElFormItem label="代理账号">
+            <ElFormItem label="代理账号" :error="getFieldError('proxy_user')">
               <ElInput v-model="proxyForm.proxy_user" placeholder="请输入代理账号" />
             </ElFormItem>
           </ElCol>
           <ElCol :md="12">
-            <ElFormItem label="代理密码">
+            <ElFormItem label="代理密码" :error="getFieldError('proxy_password')">
               <ElInput v-model="proxyForm.proxy_password" type="password" placeholder="请输入代理密码" show-password />
             </ElFormItem>
           </ElCol>
