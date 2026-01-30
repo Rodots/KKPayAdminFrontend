@@ -115,6 +115,7 @@ const stateUtils = {
   isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
   isSuccessOrFrozen: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED', 'TRADE_FROZEN'].includes(state),
   isWaitPayOrClosed: (state: string) => ['WAIT_PAY', 'WAIT_BUYER_PAY', 'TRADE_CLOSED'].includes(state),
+  isWaitPay: (state: string) => ['WAIT_PAY', 'WAIT_BUYER_PAY'].includes(state),
   isFrozen: (state: string) => state === 'TRADE_FROZEN',
 }
 
@@ -154,6 +155,7 @@ function onDetail(trade_no: string) {
       onRefund: () => onRefund(trade_no),
       onFreezeOrThaw: (state: string) => onFreezeOrThaw(trade_no, state, true),
       onDelete: () => onDel(trade_no, true),
+      onClose: () => onClose(trade_no, true),
     }),
   })
   openModal()
@@ -244,6 +246,86 @@ function onFreezeOrThaw(trade_no: string, target_state: string, isDetail = false
   })
 }
 
+// 关闭订单相关
+function showBatchCloseResult(result: { success_count: number, failed_count: number, success: string[], failed: Record<string, string> }) {
+  const failedEntries = Object.entries(result.failed)
+  const copyFailedDetails = () => {
+    const text = failedEntries.map(([tradeNo, reason]) => `${tradeNo}：${reason}`).join('\n')
+    copy(text)
+  }
+  initModal()
+  updateModal({
+    icon: result.failed_count === 0 ? 'success' : 'warning',
+    title: `批量关闭订单指令已完成`,
+    class: 'max-w-2xl',
+    description: `成功 ${result.success_count} 笔，失败 ${result.failed_count} 笔`,
+    content: result.failed_count > 0
+      ? () => {
+          const FaButton = resolveComponent('FaButton')
+          const FaIcon = resolveComponent('FaIcon')
+          return h('div', { class: 'max-h-2xl overflow-auto' }, [
+            h('div', { class: 'flex items-center justify-between mb-2' }, [
+              h('p', { class: 'font-bold text-red-500' }, '失败订单：'),
+              h(FaButton, { variant: 'outline', size: 'sm', onClick: copyFailedDetails }, () => [
+                h(FaIcon, { name: 'i-ri:file-copy-2-line', class: 'mr-1' }),
+                '复制详情',
+              ]),
+            ]),
+            ...failedEntries.map(([tradeNo, reason]) => h('p', { class: 'text-sm text-gray-600 mb-1' }, `${tradeNo}：${reason}`)),
+          ])
+        }
+      : undefined,
+    footer: false,
+  })
+  openModal()
+}
+
+function onClose(trade_no: string, isDetail = false) {
+  useFaModal().confirm({
+    title: '确认关闭订单',
+    content: '是否需要同步通知支付网关关闭订单？无论网关是否成功响应，平台订单都将被关闭。',
+    confirmButtonText: '同步网关关闭',
+    cancelButtonText: '仅关闭平台订单',
+    onConfirm: () => api.close({ trade_no, call_gateway: 1 }).then((res: any) => {
+      if (isDetail) {
+        detailFormRef.value?.getInfo()
+      }
+      getDataList()
+      const { gateway_return } = res.data
+      gateway_return.state ? toast.success(gateway_return.message) : toast.error(gateway_return.message)
+    }),
+    onCancel: () => api.close({ trade_no, call_gateway: 0 }).then((res: any) => {
+      if (isDetail) {
+        detailFormRef.value?.getInfo()
+      }
+      getDataList()
+      toast.success(res.message)
+    }),
+  })
+}
+
+function onBatchClose() {
+  const ids = batch.value.selectionDataList.map((item: any) => item.trade_no)
+  if (!ids.length) {
+    toast.warning('请先选择需要操作的数据')
+    return
+  }
+  useFaModal().confirm({
+    title: '确认批量关闭订单',
+    content: '是否需要同步通知支付网关关闭订单？无论网关是否成功响应，平台订单都将被关闭。注意：只有待支付状态的订单可以关闭。',
+    confirmButtonText: '同步网关关闭',
+    cancelButtonText: '仅关闭平台订单',
+    onConfirm: () => api.batchClose({ ids, call_gateway: 1 }).then((res: any) => {
+      getDataList()
+      showBatchCloseResult(res.data)
+    }),
+    onCancel: () => api.batchClose({ ids, call_gateway: 0 }).then((res: any) => {
+      getDataList()
+      toast.success(res.message)
+    }),
+  })
+}
+
 function onAddBlacklist(buyerId: string, type: string) {
   initModal()
   updateModal({
@@ -323,6 +405,7 @@ function handleMoreOperating(command: string, row: any) {
     funds: () => router.push({ name: 'CapitalWalletRecord', state: { trade_no: row.trade_no } }),
     delete: () => onDel(row.trade_no),
     freezeOrThaw: () => onFreezeOrThaw(row.trade_no, stateUtils.isFrozen(row.trade_state) ? 'TRADE_SUCCESS' : 'TRADE_FROZEN'),
+    close: () => onClose(row.trade_no),
   }
   actions[command]?.()
 }
@@ -463,6 +546,9 @@ function handleMoreOperating(command: string, row: any) {
         <ElButton v-auth="['super_admin', 'admin']" @click="onBatchDelete()">
           批量删除
         </ElButton>
+        <ElButton @click="onBatchClose()">
+          批量关闭
+        </ElButton>
       </ElButtonGroup>
       <ElTable v-loading="loading" class="my-4" :data="dataList" stripe highlight-current-row border height="100%" @sort-change="sortChange" @selection-change="batch.selectionDataList = $event">
         <ElTableColumn type="selection" align="center" fixed />
@@ -554,6 +640,9 @@ function handleMoreOperating(command: string, row: any) {
                       </ElDropdownItem>
                       <ElDropdownItem command="funds">
                         资金动向
+                      </ElDropdownItem>
+                      <ElDropdownItem v-if="stateUtils.isWaitPay(row.trade_state)" command="close">
+                        关闭订单
                       </ElDropdownItem>
                       <ElDropdownItem command="delete" divided>
                         删除订单

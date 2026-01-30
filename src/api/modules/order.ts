@@ -49,6 +49,11 @@ export default {
     target_state: string
   }) => api.post('order/freezeOrThaw', data),
 
+  close: (data: {
+    trade_no: string
+    call_gateway: number
+  }) => api.post('order/close', data),
+
   batchRepair: (data: {
     ids: (number | string)[]
   }) => api.post('order/batchRepair', data),
@@ -60,4 +65,9 @@ export default {
   batchDelete: (data: {
     ids: (number | string)[]
   }) => api.post('order/batchDelete', data),
+
+  batchClose: (data: {
+    ids: (number | string)[]
+    call_gateway: number
+  }) => api.post('order/batchClose', data),
 }

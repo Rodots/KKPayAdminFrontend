@@ -7,6 +7,7 @@ const emit = defineEmits<{
   refund: []
   freezeOrThaw: [state: string]
   delete: []
+  close: []
 }>()
 
 const loading = ref(true)
@@ -32,6 +33,7 @@ const stateUtils = {
   isSuccess: (state: string) => state === 'TRADE_SUCCESS',
   isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
   isFrozenOrSuccess: (state: string) => ['TRADE_FROZEN', 'TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
+  isWaitPay: (state: string) => ['WAIT_PAY', 'WAIT_BUYER_PAY'].includes(state),
   isFrozen: (state: string) => state === 'TRADE_FROZEN',
 }
 
@@ -39,6 +41,7 @@ const onReNotification = (type: string) => emit('reNotification', type)
 const onRefund = () => emit('refund')
 const onFreezeOrThaw = () => emit('freezeOrThaw', stateUtils.isFrozen(orderDetail.value.trade_state) ? 'TRADE_SUCCESS' : 'TRADE_FROZEN')
 const onDelete = () => emit('delete')
+const onClose = () => emit('close')
 </script>
 
 <template>
@@ -247,6 +250,9 @@ const onDelete = () => emit('delete')
       </FaButton>
       <FaButton v-auth="['super_admin', 'admin']" variant="outline" :disabled="!stateUtils.isFrozenOrSuccess(orderDetail.trade_state)" @click="onFreezeOrThaw">
         {{ stateUtils.isFrozen(orderDetail.trade_state) ? '解冻' : '冻结' }}订单
+      </FaButton>
+      <FaButton variant="outline" :disabled="!stateUtils.isWaitPay(orderDetail.trade_state)" @click="onClose">
+        关闭订单
       </FaButton>
       <FaButton v-auth="['super_admin', 'admin']" variant="outline" @click="onDelete">
         删除订单
