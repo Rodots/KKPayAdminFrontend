@@ -8,6 +8,7 @@ const emit = defineEmits<{
   freezeOrThaw: [state: string]
   delete: []
   close: []
+  addBlacklist: [buyerId: string, type: string]
 }>()
 
 const loading = ref(true)
@@ -42,6 +43,7 @@ const onRefund = () => emit('refund')
 const onFreezeOrThaw = () => emit('freezeOrThaw', stateUtils.isFrozen(orderDetail.value.trade_state) ? 'TRADE_SUCCESS' : 'TRADE_FROZEN')
 const onDelete = () => emit('delete')
 const onClose = () => emit('close')
+const onAddBlacklist = (buyerId: string, type: string) => emit('addBlacklist', buyerId, type)
 </script>
 
 <template>
@@ -163,20 +165,43 @@ const onClose = () => emit('close')
       </ElDescriptions>
 
       <ElDescriptions class="mt-5" :column="3" title="付款人信息" border>
+        <ElDescriptionsItem label="用户行为摘要" :span="3">
+          <span :class="orderDetail.user_behavior_summary?.is_blacklist ? 'font-bold' : ''">{{ orderDetail.user_behavior_summary?.message ?? '无记录' }}</span>
+        </ElDescriptionsItem>
         <ElDescriptionsItem label="user_id" :span="3">
           {{ orderDetail.buyer?.user_id ?? '无记录' }}
+          <FaTooltip v-if="orderDetail.buyer?.user_id" text="拉黑该user_id">
+            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="onAddBlacklist(orderDetail.buyer.user_id, 'USER_ID')">
+              <FaIcon name="i-ri:user-unfollow-line" />
+            </FaButton>
+          </FaTooltip>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="buyer_open_id" :span="3">
           {{ orderDetail.buyer?.buyer_open_id ?? '无记录' }}
+          <FaTooltip v-if="orderDetail.buyer?.buyer_open_id" text="拉黑该open_id">
+            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="onAddBlacklist(orderDetail.buyer.buyer_open_id, 'USER_ID')">
+              <FaIcon name="i-ri:user-unfollow-line" />
+            </FaButton>
+          </FaTooltip>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="限制付款人最小年龄">
           {{ orderDetail.buyer?.min_age === 0 ? '不限' : `${orderDetail.buyer?.min_age}岁` }}
         </ElDescriptionsItem>
         <ElDescriptionsItem label="手机号">
           {{ orderDetail.buyer?.phone ?? '无记录' }}
+          <FaTooltip v-if="orderDetail.buyer?.phone" text="拉黑该手机号">
+            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="onAddBlacklist(orderDetail.buyer.phone, 'MOBILE')">
+              <FaIcon name="i-ri:user-unfollow-line" />
+            </FaButton>
+          </FaTooltip>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="付款IP地址">
           {{ orderDetail.buyer?.ip ?? '无记录' }}
+          <FaTooltip v-if="orderDetail.buyer?.ip" text="拉黑该IP地址">
+            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="onAddBlacklist(orderDetail.buyer.ip, 'IP_ADDRESS')">
+              <FaIcon name="i-ri:user-unfollow-line" />
+            </FaButton>
+          </FaTooltip>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="真实姓名">
           {{ orderDetail.buyer?.real_name ?? '无记录' }}
@@ -186,6 +211,11 @@ const onClose = () => emit('close')
         </ElDescriptionsItem>
         <ElDescriptionsItem label="证件号">
           {{ orderDetail.buyer?.card_no ?? '无记录' }}
+          <FaTooltip v-if="orderDetail.buyer?.card_no" text="拉黑该证件号">
+            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="onAddBlacklist(orderDetail.buyer.card_no, 'ID_CARD')">
+              <FaIcon name="i-ri:user-unfollow-line" />
+            </FaButton>
+          </FaTooltip>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="浏览器UA" :span="3">
           <FaSortText :text="orderDetail.buyer?.user_agent ?? '无记录'" />
@@ -260,3 +290,9 @@ const onClose = () => emit('close')
     </FaButtonGroup>
   </div>
 </template>
+
+<style>
+.el-descriptions__body .el-descriptions__table.is-bordered .el-descriptions__cell {
+  padding: 6px 11px;
+}
+</style>

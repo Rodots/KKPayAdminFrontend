@@ -25,6 +25,7 @@ const routes: RouteRecordRaw = {
         menu: false,
         activeMenu: '/order',
         cache: true,
+        copyright: false,
       },
     },
   ],

@@ -156,6 +156,7 @@ function onDetail(trade_no: string) {
       onFreezeOrThaw: (state: string) => onFreezeOrThaw(trade_no, state, true),
       onDelete: () => onDel(trade_no, true),
       onClose: () => onClose(trade_no, true),
+      onAddBlacklist: (buyerId: string, type: string) => onAddBlacklist(buyerId, type),
     }),
   })
   openModal()
@@ -550,16 +551,20 @@ function handleMoreOperating(command: string, row: any) {
           批量关闭
         </ElButton>
       </ElButtonGroup>
-      <ElTable v-loading="loading" class="my-4" :data="dataList" stripe highlight-current-row border height="100%" @sort-change="sortChange" @selection-change="batch.selectionDataList = $event">
+      <ElTable v-loading="loading" class="my-4" :data="dataList" stripe border height="100%" :row-class-name="({ row }) => row.is_blacklist ? 'blacklist-row' : ''" @sort-change="sortChange" @selection-change="batch.selectionDataList = $event">
         <ElTableColumn type="selection" align="center" fixed />
         <ElTableColumn width="290">
           <template #header>
             平台订单号<br>商户订单号
           </template>
           <template #default="{ row }">
-            {{ row.trade_no }}<FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="copy(row.trade_no)">
+            <ElTooltip content="点击查看订单详情" placement="top" :show-after="500">
+              <span class="cursor-pointer hover:underline" @click="onDetail(row.trade_no)">{{ row.trade_no }}</span>
+            </ElTooltip>
+            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="copy(row.trade_no)">
               <FaIcon :name="copied && text === row.trade_no ? 'i-ri:check-line' : 'i-ri:file-copy-2-line'" class="h-4 w-4" :class="[copied && text === row.trade_no && 'text-green-500']" />
-            </FaButton><br>{{ row.out_trade_no }}<FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="copy(row.out_trade_no)">
+            </FaButton>
+            <br>{{ row.out_trade_no }}<FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="copy(row.out_trade_no)">
               <FaIcon :name="copied && text === row.out_trade_no ? 'i-ri:check-line' : 'i-ri:file-copy-2-line'" class="h-4 w-4" :class="[copied && text === row.out_trade_no && 'text-green-500']" />
             </FaButton>
           </template>
@@ -579,18 +584,6 @@ function handleMoreOperating(command: string, row: any) {
           </template>
           <template #default="{ row }">
             {{ row.subject }}<br>￥{{ row.total_amount }}
-          </template>
-        </ElTableColumn>
-        <ElTableColumn min-width="100">
-          <template #header>
-            支付IP地址<br>用户支付金额
-          </template>
-          <template #default="{ row }">
-            {{ row.buyer.ip }}<FaTooltip text="拉黑该IP地址">
-              <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="onAddBlacklist(row.buyer.ip, 'IP_ADDRESS')">
-                <FaIcon name="i-ri:user-unfollow-line" />
-              </FaButton>
-            </FaTooltip><br>￥{{ row.buyer_pay_amount }}
           </template>
         </ElTableColumn>
         <ElTableColumn width="200">
@@ -677,5 +670,9 @@ function handleMoreOperating(command: string, row: any) {
 <style>
 .el-table .el-table__cell {
   padding: 4px 0;
+}
+
+.el-table .blacklist-row {
+  --el-table-tr-bg-color: var(--el-color-warning-light-9);
 }
 </style>
