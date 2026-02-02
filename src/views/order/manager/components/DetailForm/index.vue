@@ -32,6 +32,7 @@ defineExpose({ getInfo })
 // 订单状态判断
 const stateUtils = {
   isSuccess: (state: string) => state === 'TRADE_SUCCESS',
+  isRefundable: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND'].includes(state),
   isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
   isFrozenOrSuccess: (state: string) => ['TRADE_FROZEN', 'TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
   isWaitPay: (state: string) => ['WAIT_PAY', 'WAIT_BUYER_PAY'].includes(state),
@@ -275,7 +276,7 @@ const onAddBlacklist = (buyerId: string, type: string) => emit('addBlacklist', b
       <FaButton variant="outline" :disabled="!stateUtils.isSuccessOrFinish(orderDetail.trade_state)" @click="onReNotification('sync')">
         重新通知(同步)
       </FaButton>
-      <FaButton v-auth="['super_admin', 'admin']" variant="outline" :disabled="!stateUtils.isSuccess(orderDetail.trade_state)" @click="onRefund">
+      <FaButton v-auth="['super_admin', 'admin']" variant="outline" :disabled="!stateUtils.isRefundable(orderDetail.trade_state)" @click="onRefund">
         发起退款
       </FaButton>
       <FaButton v-auth="['super_admin', 'admin']" variant="outline" :disabled="!stateUtils.isFrozenOrSuccess(orderDetail.trade_state)" @click="onFreezeOrThaw">

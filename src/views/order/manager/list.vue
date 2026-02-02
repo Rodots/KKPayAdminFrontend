@@ -112,6 +112,7 @@ function getDataList() {
 
 const stateUtils = {
   isSuccess: (state: string) => state === 'TRADE_SUCCESS',
+  isRefundable: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND'].includes(state),
   isSuccessOrFinish: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED'].includes(state),
   isSuccessOrFrozen: (state: string) => ['TRADE_SUCCESS', 'TRADE_REFUND', 'TRADE_FINISHED', 'TRADE_FROZEN'].includes(state),
   isWaitPayOrClosed: (state: string) => ['WAIT_PAY', 'WAIT_BUYER_PAY', 'TRADE_CLOSED'].includes(state),
@@ -615,7 +616,7 @@ function handleMoreOperating(command: string, row: any) {
                 <ElButton type="primary" size="small" plain @click="onDetail(row.trade_no)">
                   详情
                 </ElButton>
-                <ElButton v-if="stateUtils.isSuccess(row.trade_state)" type="info" size="small" plain @click="onRefund(row.trade_no)">
+                <ElButton v-if="stateUtils.isRefundable(row.trade_state)" type="info" size="small" plain @click="onRefund(row.trade_no)">
                   退款
                 </ElButton>
                 <ElButton v-if="stateUtils.isWaitPayOrClosed(row.trade_state)" type="success" size="small" plain @click="onRepair(row.trade_no)">
