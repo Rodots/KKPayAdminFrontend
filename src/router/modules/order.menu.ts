@@ -24,7 +24,6 @@ const routes: RouteRecordRaw = {
         title: '订单列表',
         menu: false,
         activeMenu: '/order',
-        cache: true,
         copyright: false,
       },
     },
