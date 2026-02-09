@@ -302,12 +302,12 @@ function handleMoreOperating(command: string, row: any) {
         <ElTableColumn prop="name" label="通道名称" show-overflow-tooltip />
         <ElTableColumn prop="cost" label="成本费率" width="110" sortable>
           <template #default="{ row }">
-            <span v-if="row.fixed_cost > 0">￥{{ row.fixed_cost }} + </span>{{ row.cost * 100 }}%
+            <span v-if="row.fixed_cost > 0">￥{{ row.fixed_cost }} + </span>{{ (Number.parseFloat(row.cost) * 100).toFixed(2).replace(/\.?0+$/, '') }}%
           </template>
         </ElTableColumn>
         <ElTableColumn prop="rate" label="抽成费率" width="110" sortable>
           <template #default="{ row }">
-            <span v-if="row.fixed_fee > 0">￥{{ row.fixed_fee }} + </span>{{ row.rate * 100 }}%
+            <span v-if="row.fixed_fee > 0">￥{{ row.fixed_fee }} + </span>{{ (Number.parseFloat(row.rate) * 100).toFixed(2).replace(/\.?0+$/, '') }}%
           </template>
         </ElTableColumn>
         <ElTableColumn prop="payment_type_text" label="支付方式" />
