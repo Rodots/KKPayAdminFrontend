@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
 
+/**
+ * 条件显示配置
+ * @description 用于配置字段的条件显示规则
+ */
+export interface ShowWhenCondition {
+  /** 依赖的字段名 */
+  field: string
+  /** 匹配的值，支持单个值或值数组（数组表示 OR 关系） */
+  value: any | any[]
+}
+
 export interface DynamicFormConfig {
   field: string
   type: 'input' | 'textarea' | 'password' | 'select' | 'radio' | 'checkbox' | 'switch' | 'number' | 'date' | 'datetime' | 'time'
@@ -23,6 +34,7 @@ export interface DynamicFormConfig {
   class?: string
   span?: number
   tooltip?: string
+  showWhen?: ShowWhenCondition
 }
 
 export interface Props {
@@ -101,79 +113,105 @@ function getDefaultValue(item: DynamicFormConfig): any {
   }
 }
 
-// 动态生成表单验证规则
+/**
+ * 判断字段是否应该显示
+ * @param item 表单配置项
+ * @returns 是否显示
+ */
+function isFieldVisible(item: DynamicFormConfig): boolean {
+  // 如果没有配置 showWhen，始终显示
+  if (!item.showWhen) {
+    return true
+  }
+
+  const { field, value } = item.showWhen
+  const currentValue = formData.value[field]
+
+  // 如果 value 是数组，检查当前值是否在数组中（OR 关系）
+  if (Array.isArray(value)) {
+    return value.includes(currentValue)
+  }
+
+  // 单个值直接比较
+  return currentValue === value
+}
+
+// 动态生成表单验证规则（只对可见字段生效）
 const formRules = computed<FormRules>(() => {
   const rules: FormRules = {}
 
   props.config.forEach((item) => {
-    if (item.field) {
-      const fieldRules: any[] = []
+    // 跳过不可见的字段，不生成验证规则
+    if (!item.field || !isFieldVisible(item)) {
+      return
+    }
 
-      // 必填验证
-      if (item.required) {
-        fieldRules.push({
-          required: true,
-          message: `请${getInputPrefix(item.type)}${item.label}`,
-          trigger: getValidationTrigger(item.type),
-        })
-      }
+    const fieldRules: any[] = []
 
-      // 类型验证
-      if (item.type === 'number') {
+    // 必填验证
+    if (item.required) {
+      fieldRules.push({
+        required: true,
+        message: `请${getInputPrefix(item.type)}${item.label}`,
+        trigger: getValidationTrigger(item.type),
+      })
+    }
+
+    // 类型验证
+    if (item.type === 'number') {
+      fieldRules.push({
+        type: 'number',
+        message: `${item.label}必须是数字`,
+        trigger: 'blur',
+      })
+    }
+
+    // 长度验证
+    if (item.maxlength && ['input', 'textarea', 'password'].includes(item.type)) {
+      fieldRules.push({
+        max: item.maxlength,
+        message: `${item.label}长度不能超过${item.maxlength}位`,
+        trigger: 'blur',
+      })
+    }
+
+    // 数值范围验证
+    if (item.type === 'number') {
+      if (item.min !== undefined) {
         fieldRules.push({
-          type: 'number',
-          message: `${item.label}必须是数字`,
+          validator: (_rule: any, value: any, callback: any) => {
+            if (value !== null && value !== undefined && value < item.min!) {
+              callback(new Error(`${item.label}不能小于${item.min}`))
+            }
+            else {
+              callback()
+            }
+          },
           trigger: 'blur',
         })
       }
-
-      // 长度验证
-      if (item.maxlength && ['input', 'textarea', 'password'].includes(item.type)) {
+      if (item.max !== undefined) {
         fieldRules.push({
-          max: item.maxlength,
-          message: `${item.label}长度不能超过${item.maxlength}位`,
+          validator: (_rule: any, value: any, callback: any) => {
+            if (value !== null && value !== undefined && value > item.max!) {
+              callback(new Error(`${item.label}不能大于${item.max}`))
+            }
+            else {
+              callback()
+            }
+          },
           trigger: 'blur',
         })
       }
+    }
 
-      // 数值范围验证
-      if (item.type === 'number') {
-        if (item.min !== undefined) {
-          fieldRules.push({
-            validator: (_rule: any, value: any, callback: any) => {
-              if (value !== null && value !== undefined && value < item.min!) {
-                callback(new Error(`${item.label}不能小于${item.min}`))
-              }
-              else {
-                callback()
-              }
-            },
-            trigger: 'blur',
-          })
-        }
-        if (item.max !== undefined) {
-          fieldRules.push({
-            validator: (_rule: any, value: any, callback: any) => {
-              if (value !== null && value !== undefined && value > item.max!) {
-                callback(new Error(`${item.label}不能大于${item.max}`))
-              }
-              else {
-                callback()
-              }
-            },
-            trigger: 'blur',
-          })
-        }
-      }
+    // 自定义验证规则
+    if (item.rules && Array.isArray(item.rules)) {
+      fieldRules.push(...item.rules)
+    }
 
-      // 自定义验证规则
-      if (item.rules && Array.isArray(item.rules)) {
-        fieldRules.push(...item.rules)
-      }
-
-      if (fieldRules.length > 0) {
-        rules[item.field] = fieldRules
-      }
+    if (fieldRules.length > 0) {
+      rules[item.field] = fieldRules
     }
   })
 
@@ -264,7 +302,7 @@ defineExpose({
     >
       <ElRow :gutter="20">
         <template v-for="item in formConfig" :key="item.field">
-          <ElCol :md="item.span || 24">
+          <ElCol v-if="isFieldVisible(item)" :md="item.span || 24">
             <ElFormItem
               :label="item.label"
               :prop="item.field"
