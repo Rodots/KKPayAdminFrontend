@@ -68,7 +68,7 @@ defineExpose({
       <FormField v-slot="{ componentField, errors }" name="description">
         <FormItem class="relative pb-6 space-y-0">
           <FormControl>
-            <FaTextarea v-bind="componentField" class="w-full" :class="errors.length && 'border-destructive'" placeholder="请描述您的问题或建议" />
+            <FaTextarea v-bind="componentField" class="w-full" :class="{ 'border-destructive': errors.length }" placeholder="请描述您的问题或建议" />
           </FormControl>
           <Transition enter-active-class="transition-opacity" enter-from-class="opacity-0" leave-active-class="transition-opacity" leave-to-class="opacity-0">
             <FormMessage class="absolute bottom-1 text-xs" />

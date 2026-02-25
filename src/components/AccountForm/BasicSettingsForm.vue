@@ -64,7 +64,7 @@ const onSubmit = form.handleSubmit((values) => {
             <div class="label mb-2">
               昵称
             </div>
-            <FaInput placeholder="怎么称呼？仅用于后台展示使用" class="w-full" :class="errors.length && 'border-destructive'" v-bind="componentField" maxlength="16" />
+            <FaInput placeholder="怎么称呼？仅用于后台展示使用" class="w-full" :class="{ 'border-destructive': errors.length }" v-bind="componentField" maxlength="16" />
           </FormControl>
           <Transition enter-active-class="transition-opacity" enter-from-class="opacity-0" leave-active-class="transition-opacity" leave-to-class="opacity-0">
             <FormMessage class="absolute bottom-1 text-xs" />
@@ -78,7 +78,7 @@ const onSubmit = form.handleSubmit((values) => {
             <div class="label mb-2">
               电子邮箱地址
             </div>
-            <FaInput type="email" placeholder="请输入您的电子邮箱地址" class="w-full" :class="errors.length && 'border-destructive'" v-bind="componentField" maxlength="255" />
+            <FaInput type="email" placeholder="请输入您的电子邮箱地址" class="w-full" :class="{ 'border-destructive': errors.length }" v-bind="componentField" maxlength="255" />
           </FormControl>
           <Transition enter-active-class="transition-opacity" enter-from-class="opacity-0" leave-active-class="transition-opacity" leave-to-class="opacity-0">
             <FormMessage class="absolute bottom-1 text-xs" />

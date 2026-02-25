@@ -57,12 +57,6 @@ const onSubmit = form.handleSubmit((values) => {
     loading.value = false
   })
 })
-
-function testAccount(account: string) {
-  form.setFieldValue('account', account)
-  form.setFieldValue('password', '123456')
-  onSubmit()
-}
 </script>
 
 <template>
@@ -79,7 +73,7 @@ function testAccount(account: string) {
       <FormField v-slot="{ componentField, errors }" name="account">
         <FormItem class="relative pb-6 space-y-0">
           <FormControl>
-            <FaInput type="text" placeholder="用户名" class="w-full" :class="errors.length && 'border-destructive'" v-bind="componentField" />
+            <FaInput type="text" placeholder="用户名" class="w-full" :class="{ 'border-destructive': errors.length }" v-bind="componentField" />
           </FormControl>
           <Transition enter-active-class="transition-opacity" enter-from-class="opacity-0" leave-active-class="transition-opacity" leave-to-class="opacity-0">
             <FormMessage class="absolute bottom-1 text-xs" />
@@ -89,7 +83,7 @@ function testAccount(account: string) {
       <FormField v-slot="{ componentField, errors }" name="password">
         <FormItem class="relative pb-6 space-y-0">
           <FormControl>
-            <FaInput type="password" placeholder="密码" class="w-full" :class="errors.length && 'border-destructive'" v-bind="componentField" />
+            <FaInput type="password" placeholder="密码" class="w-full" :class="{ 'border-destructive': errors.length }" v-bind="componentField" />
           </FormControl>
           <Transition enter-active-class="transition-opacity" enter-from-class="opacity-0" leave-active-class="transition-opacity" leave-to-class="opacity-0">
             <FormMessage class="absolute bottom-1 text-xs" />
@@ -99,7 +93,7 @@ function testAccount(account: string) {
       <FormField v-slot="{ componentField, errors }" name="totp_code">
         <FormItem class="relative pb-6 space-y-0">
           <FormControl>
-            <FaInput type="text" placeholder="TOTP一次性密码（如未设置可不填）" class="w-full" :class="errors.length && 'border-destructive'" v-bind="componentField" maxlength="6" />
+            <FaInput type="text" placeholder="TOTP一次性密码（如未设置可不填）" class="w-full" :class="{ 'border-destructive': errors.length }" v-bind="componentField" maxlength="6" />
           </FormControl>
           <Transition enter-active-class="transition-opacity" enter-from-class="opacity-0" leave-active-class="transition-opacity" leave-to-class="opacity-0">
             <FormMessage class="absolute bottom-1 text-xs" />
@@ -123,13 +117,5 @@ function testAccount(account: string) {
         登录
       </FaButton>
     </form>
-    <div class="mt-4 text-center -mb-4">
-      <FaDivider>快速登录</FaDivider>
-      <div class="space-x-2">
-        <FaButton variant="default" size="sm" plain @click="testAccount('admin')">
-          admin
-        </FaButton>
-      </div>
-    </div>
   </div>
 </template>
