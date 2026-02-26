@@ -27,6 +27,7 @@ const systemForm = ref({
   site_name: '',
   notify_url: '',
   cdn_static_url: '/ajax/libs/',
+  test_merchant_number: '',
 })
 
 const paymentForm = ref({
@@ -101,6 +102,7 @@ const validationSchema = z.object({
   site_name: z.string().min(1, '请输入网站名称').max(50, '网站名称不能超过50个字符'),
   notify_url: z.string().refine(val => !val || /^https?:\/\/.+\/$/.test(val), { message: '回调地址必须以 http(s):// 开头，以 / 结尾' }),
   cdn_static_url: z.string().min(1, '请选择公共静态资源库'),
+  test_merchant_number: z.string().refine(val => !val || /^M[A-Za-z0-9]{15}$/.test(val), { message: '商户编号格式不正确（以 M 开头的 16 位字母数字组合）' }),
   // 支付配置
   min_amount: z.string().refine(val => !val || Number.parseFloat(val) >= 0.01, { message: '最小金额必须是有效的正数' }),
   max_amount: z.string().refine(val => !val || Number.parseFloat(val) < 100000000, { message: '最大金额必须是有效的正数' }),
@@ -347,6 +349,11 @@ async function saveAllSettings() {
               <ElSelect v-model="systemForm.cdn_static_url" placeholder="请选择公共静态资源库 CDN 提供方" class="w-full">
                 <ElOption v-for="item in cdnOptions" :key="item.value" :label="item.label" :value="item.value" />
               </ElSelect>
+            </ElFormItem>
+          </ElCol>
+          <ElCol :md="8">
+            <ElFormItem label="平台测试专用商户编号" :error="getFieldError('test_merchant_number')">
+              <ElInput v-model="systemForm.test_merchant_number" placeholder="请输入供平台各功能测试时使用的商户对应的商户编号，留空则无法正常使用测试功能" :maxlength="16" />
             </ElFormItem>
           </ElCol>
         </ElRow>
