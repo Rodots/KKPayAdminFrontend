@@ -24,6 +24,7 @@ const formModeProps = ref({ id: '' })
 // 搜索
 const searchDefault = {
   merchant_number: '',
+  nickname: '',
   email: '',
   phone: '',
   remark: '',
@@ -51,6 +52,7 @@ function getDataList() {
   const params = {
     ...getParams(),
     ...(search.value.merchant_number && { merchant_number: search.value.merchant_number }),
+    ...(search.value.nickname && { nickname: search.value.nickname }),
     ...(search.value.email && { email: search.value.email }),
     ...(search.value.phone && { phone: search.value.phone }),
     ...(search.value.remark && { remark: search.value.remark }),
@@ -444,6 +446,9 @@ function onEncryptionManage(row: any) {
             <ElFormItem label="商户编号">
               <ElInput v-model="search.merchant_number" placeholder="请输入商户编号" clearable @keydown.enter="currentChange()" @clear="currentChange()" />
             </ElFormItem>
+            <ElFormItem label="商户昵称">
+              <ElInput v-model="search.nickname" placeholder="请输入商户昵称，支持模糊查询" clearable @keydown.enter="currentChange()" @clear="currentChange()" />
+            </ElFormItem>
             <ElFormItem v-show="!fold" label="邮箱">
               <ElInput v-model="search.email" placeholder="请输入邮箱，支持模糊查询" clearable @keydown.enter="currentChange()" @clear="currentChange()" />
             </ElFormItem>
@@ -529,14 +534,22 @@ function onEncryptionManage(row: any) {
       </ElSpace>
       <ElTable v-loading="loading" class="my-4" :data="dataList" stripe highlight-current-row border height="100%" @sort-change="sortChange" @selection-change="batch.selectionDataList = $event">
         <ElTableColumn v-if="batch.enable" v-auth="['super_admin', 'admin']" type="selection" align="center" fixed />
-        <ElTableColumn label="商户编号" width="220">
+        <ElTableColumn width="220">
+          <template #header>
+            商户编号<br>商户昵称
+          </template>
           <template #default="scope">
-            <ElTooltip :content="scope.row.remark" placement="top" :disabled="!scope.row.remark">
-              <span>{{ scope.row.merchant_number }}</span>
-            </ElTooltip>
-            <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="copy(scope.row.merchant_number)">
-              <FaIcon :name="copied && text === scope.row.merchant_number ? 'i-ri:check-line' : 'i-ri:file-copy-2-line'" class="h-4 w-4" :class="[copied && text === scope.row.merchant_number && 'text-green-500']" />
-            </FaButton>
+            <div class="flex items-center">
+              <ElTooltip :content="scope.row.remark" placement="top" :disabled="!scope.row.remark">
+                <span>{{ scope.row.merchant_number }}</span>
+              </ElTooltip>
+              <FaButton variant="outline" size="icon" class="ml-1 h-5 w-5 text-gray-500 hover:text-gray-700" @click="copy(scope.row.merchant_number)">
+                <FaIcon :name="copied && text === scope.row.merchant_number ? 'i-ri:check-line' : 'i-ri:file-copy-2-line'" class="h-4 w-4" :class="[copied && text === scope.row.merchant_number && 'text-green-500']" />
+              </FaButton>
+            </div>
+            <div class="mt-1 text-sm text-gray-500">
+              {{ scope.row.nickname }}
+            </div>
           </template>
         </ElTableColumn>
         <ElTableColumn width="120" show-overflow-tooltip :tooltip-formatter="({ row }) => row.email">

@@ -9,6 +9,7 @@ const formRef = useTemplateRef<FormInstance>('formRef')
 const form = ref({
   id: props.id,
   merchant_number: '',
+  nickname: '',
   margin: '0.00',
   email: '',
   phone: '',
@@ -23,6 +24,10 @@ const form = ref({
 })
 
 const formRules = ref<FormRules>({
+  nickname: [
+    { required: true, message: '请输入商户昵称', trigger: 'blur' },
+    { max: 10, message: '商户昵称不能超过10个字符', trigger: 'blur' },
+  ],
   password: [
     { required: form.value.id === '', message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能小于6位', trigger: 'blur' },
@@ -60,6 +65,7 @@ function getInfo() {
   loading.value = true
   api.detail(form.value.id).then((res: any) => {
     form.value.merchant_number = res.data.merchant_number
+    form.value.nickname = res.data.nickname ?? ''
     form.value.margin = res.data.margin
     form.value.email = res.data.email
     form.value.phone = res.data.phone
@@ -92,6 +98,9 @@ defineExpose({
     <ElForm ref="formRef" :model="form" :rules="formRules" label-width="100px" label-suffix="：">
       <ElFormItem v-if="form.id !== ''" label="商户编号">
         <span>{{ form.merchant_number }}</span>
+      </ElFormItem>
+      <ElFormItem label="商户昵称" prop="nickname">
+        <ElInput v-model="form.nickname" placeholder="请输入商户昵称" :maxlength="10" />
       </ElFormItem>
       <ElFormItem label="保证金" prop="margin">
         <ElInput v-model="form.margin" placeholder="请输入保证金" />
