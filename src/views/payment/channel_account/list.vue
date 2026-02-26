@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ElInputNumber } from 'element-plus'
+import { useClipboard } from '@vueuse/core'
+import { ElForm, ElFormItem, ElInput, ElInputNumber } from 'element-plus'
 import { toast } from 'vue-sonner'
 import api from '@/api/modules/payment'
 import { useFaModal } from '@/ui/components/FaModal'
@@ -11,6 +12,7 @@ defineOptions({ name: 'PaymentChannelAccountList' })
 const route = useRoute()
 const router = useRouter()
 const { pagination, getParams, onSizeChange, onCurrentChange, onSortChange } = usePagination()
+const { copy, copied, text } = useClipboard()
 
 const tableAutoHeight = ref(true)
 const loading = ref(false)
@@ -188,6 +190,103 @@ function handleMoreOperating(command: string, row: any) {
   actions[command]?.()
 }
 
+function onPaymentTest(row: any) {
+  const formData = reactive({ amount: '1.00', subject: '支付测试' })
+  useFaModal().confirm({
+    title: '发起支付测试',
+    content: () => h(ElForm, { labelWidth: '100px', class: 'pt-4' }, () => [
+      h(ElFormItem, { label: '子账户ID' }, () => h('span', row.id)),
+      h(ElFormItem, { label: '支付金额', required: true }, () => h(ElInput, {
+        'modelValue': formData.amount,
+        'onUpdate:modelValue': (v: string) => formData.amount = v,
+        'placeholder': '请输入支付金额（≥0.01）',
+      })),
+      h(ElFormItem, { label: '商品名称', required: true }, () => h(ElInput, {
+        'modelValue': formData.subject,
+        'onUpdate:modelValue': (v: string) => formData.subject = v,
+        'placeholder': '请输入商品名称（≤255字符）',
+        'maxlength': 255,
+        'showWordLimit': true,
+      })),
+    ]),
+    confirmButtonText: '发起测试',
+    onConfirm: () => {
+      if (!formData.amount || Number(formData.amount) < 0.01) {
+        toast.warning('支付金额不能小于 0.01')
+        return Promise.reject(new Error('金额校验失败'))
+      }
+      if (!formData.subject?.trim()) {
+        toast.warning('商品名称不能为空')
+        return Promise.reject(new Error('商品名称校验失败'))
+      }
+      return api.paymentTest({
+        id: row.id,
+        amount: formData.amount,
+        subject: formData.subject.trim(),
+      }).then((res: any) => {
+        const paymentUrl = res.data?.payment_url
+        if (paymentUrl) {
+          showPaymentUrlModal(paymentUrl, row.name)
+        }
+      })
+    },
+  })
+}
+
+function showPaymentUrlModal(url: string, accountName: string) {
+  const { open, close } = useFaModal().create({
+    closable: false,
+    border: false,
+    alignCenter: true,
+    showCancelButton: true,
+    closeOnClickOverlay: false,
+    destroyOnClose: true,
+    openAutoFocus: true,
+    contentClass: 'py-0 min-h-auto',
+    footerClass: 'p-4',
+    title: '订单创建成功，请指定下一步操作',
+    confirmButtonText: '新窗口打开',
+    content: () => h('div', { class: 'space-y-3 pt-2' }, [
+      // 支付链接展示 + 复制按钮
+      h('div', { class: 'flex items-start gap-2 rounded-lg bg-gray-50 dark:bg-gray-800 p-3' }, [
+        h('p', { class: 'flex-1 text-sm break-all select-all text-blue-600 dark:text-blue-400' }, url),
+        h(resolveComponent('FaButton'), {
+          variant: 'outline',
+          size: 'icon',
+          class: 'shrink-0 h-7 w-7',
+          onClick: () => copy(url),
+        }, () => h(resolveComponent('FaIcon'), {
+          name: copied.value && text.value === url ? 'i-ri:check-line' : 'i-ri:file-copy-2-line',
+          class: ['h-4 w-4', copied.value && text.value === url && 'text-green-500'],
+        })),
+      ]),
+      // 其他打开方式
+      h('div', { class: 'flex gap-2' }, [
+        h(resolveComponent('FaButton'), {
+          variant: 'outline',
+          size: 'sm',
+          class: 'flex-1',
+          onClick: () => {
+            close()
+            router.push({
+              name: 'PaymentChannelAccountTest',
+              query: { title: `支付测试 - ${accountName}`, iframe: url },
+            })
+          },
+        }, () => [h(resolveComponent('FaIcon'), { name: 'i-ep:monitor' }), ' 内嵌 Iframe 打开']),
+        h(resolveComponent('FaButton'), {
+          variant: 'outline',
+          size: 'sm',
+          class: 'flex-1',
+          onClick: () => { window.location.href = url },
+        }, () => [h(resolveComponent('FaIcon'), { name: 'i-ep:right' }), ' 当前页面打开']),
+      ]),
+    ]),
+    onConfirm: () => { window.open(url, '_blank') },
+  })
+  open()
+}
+
 const onCancel = () => router.close({ name: 'PaymentChannel' })
 
 function formatRate(row: any) {
@@ -316,7 +415,7 @@ function formatAmount(row: any, field: string) {
       </ElSpace>
       <ElTable v-loading="loading" class="my-4" :data="dataList" stripe highlight-current-row border height="100%" @sort-change="sortChange" @selection-change="batch.selectionDataList = $event">
         <ElTableColumn v-if="batch.enable" type="selection" align="center" fixed />
-        <ElTableColumn prop="id" label="子账户ID" width="120" sortable />
+        <ElTableColumn prop="id" label="ID" width="80" sortable />
         <ElTableColumn prop="name" label="子账户名称" min-width="100" show-overflow-tooltip />
         <ElTableColumn prop="inherit_config_text" label="继承状态" width="85" align="center">
           <template #default="{ row }">
@@ -360,12 +459,14 @@ function formatAmount(row: any, field: string) {
         </ElTableColumn>
         <ElTableColumn prop="remark" label="备注" show-overflow-tooltip />
         <ElTableColumn prop="created_at" label="创建时间" width="165" />
-        <ElTableColumn prop="updated_at" label="更新时间" width="165" />
-        <ElTableColumn label="操作" width="200" align="center">
+        <ElTableColumn label="操作" width="250" align="center">
           <template #default="{ row }">
             <ElSpace>
               <ElButton type="primary" size="small" plain @click="onEdit(row)">
                 编辑
+              </ElButton>
+              <ElButton type="warning" size="small" plain @click="onPaymentTest(row)">
+                测试
               </ElButton>
               <ElDropdown @command="handleMoreOperating($event, row)">
                 <ElButton size="small">

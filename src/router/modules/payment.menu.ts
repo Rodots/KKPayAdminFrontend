@@ -72,6 +72,18 @@ const routes: RouteRecordRaw = {
             noCache: 'PaymentChannelAccountList',
           },
         },
+        {
+          path: 'test',
+          redirect: '',
+          name: 'PaymentChannelAccountTest',
+          meta: {
+            title: '支付测试',
+            menu: false,
+            activeMenu: '/payment',
+            iframe: true,
+            cache: true,
+          },
+        },
       ],
     },
   ],

@@ -92,4 +92,11 @@ export default {
   channelAccountDelete: (data: {
     ids: (number | string)[]
   }) => api.post('paymentChannelAccount/delete', data),
+
+  // 发起支付测试
+  paymentTest: (data: {
+    id: number
+    amount: string
+    subject: string
+  }) => api.post('paymentChannelAccount/paymentTest', data),
 }
