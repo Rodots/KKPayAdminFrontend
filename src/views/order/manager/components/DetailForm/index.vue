@@ -119,7 +119,8 @@ const onAddBlacklist = (buyerId: string, type: string) => emit('addBlacklist', b
         </ElDescriptionsItem>
         <ElDescriptionsItem label="结算周期">
           <template v-if="orderDetail.settle_cycle !== undefined && orderDetail.settle_cycle !== null">
-            <span v-if="orderDetail.settle_cycle <= 0">实时</span>
+            <span v-if="orderDetail.settle_cycle === -1">测试</span>
+            <span v-else-if="orderDetail.settle_cycle <= 0">实时</span>
             <span v-else>延迟{{ orderDetail.settle_cycle }}天</span>
           </template>
           <span v-else>未知</span>

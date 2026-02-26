@@ -428,7 +428,7 @@ function handleMoreOperating(command: string, row: any) {
                   </ElIcon>
                 </ElTooltip>
               </template>
-              <ElInput v-model="search.fuzzy_trade_no" placeholder="请输入单号，精确匹配平台/商户/上游/(真实/渠道)流水号之一，不支持模糊查询" clearable @keydown.enter="currentChange()" @clear="currentChange()" />
+              <ElInput v-model="search.fuzzy_trade_no" placeholder="请输入任意类型单号，精确匹配" clearable @keydown.enter="currentChange()" @clear="currentChange()" />
             </ElFormItem>
             <ElFormItem v-show="!fold" label="平台订单号">
               <ElInput v-model="search.trade_no" placeholder="请输入平台订单号，支持模糊查询" clearable maxlength="28" @keydown.enter="currentChange()" @clear="currentChange()" />
