@@ -160,9 +160,7 @@ defineExpose({
       </ElFormItem>
       <ElFormItem label="权限" prop="competence">
         <ElCheckboxGroup v-model="form.competence">
-          <ElCheckbox v-for="option in competenceOptions" :key="option.value" :label="option.value">
-            {{ option.label }}
-          </ElCheckbox>
+          <ElCheckbox v-for="option in competenceOptions" :key="option.value" :value="option.value" :label="option.label" />
         </ElCheckboxGroup>
       </ElFormItem>
     </ElForm>
