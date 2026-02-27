@@ -4,7 +4,6 @@ import { ElForm, ElFormItem, ElInput, ElInputNumber } from 'element-plus'
 import { toast } from 'vue-sonner'
 import api from '@/api/modules/payment'
 import { useFaModal } from '@/ui/components/FaModal'
-import eventBus from '@/utils/eventBus'
 import '@/assets/styles/list.css'
 
 defineOptions({ name: 'PaymentChannelAccountList' })
@@ -13,7 +12,7 @@ const route = useRoute()
 const router = useRouter()
 const { pagination, getParams, onSizeChange, onCurrentChange, onSortChange } = usePagination()
 const { copy, copied, text } = useClipboard()
-
+const channelId = computed(() => route.params.channelId as string ?? '')
 const tableAutoHeight = ref(true)
 const loading = ref(false)
 const dataList = ref<any[]>([])
@@ -35,18 +34,16 @@ const batch = ref({
 
 onMounted(() => {
   getDataList()
-  eventBus.on('get-data-list', getDataList)
-})
-
-onBeforeUnmount(() => {
-  eventBus.off('get-data-list')
 })
 
 function getDataList() {
+  if (!channelId.value) {
+    return router.close({ name: 'PaymentChannel' })
+  }
   loading.value = true
   const params = {
     ...getParams(),
-    channel_id: route.params.channelId ? Number(route.params.channelId) : 0,
+    channel_id: channelId.value ? Number(channelId.value) : 0,
     ...(search.value.name && { name: search.value.name }),
     ...(search.value.inherit_config !== '' && { inherit_config: search.value.inherit_config }),
     ...(search.value.status !== '' && { status: search.value.status }),
@@ -69,11 +66,11 @@ const currentChange = (page = 1) => onCurrentChange(page).then(getDataList)
 const sortChange = ({ prop, order }: { prop: string, order: string }) => onSortChange(prop, order).then(getDataList)
 
 function onCreate() {
-  router.push({ name: 'PaymentChannelAccountCreate', params: { channelId: route.params.channelId } })
+  router.push({ name: 'PaymentChannelAccountCreate', params: { channelId: channelId.value } })
 }
 
 function onEdit(row: any) {
-  router.push({ name: 'PaymentChannelAccountEdit', params: { channelId: route.params.channelId, id: row.id } })
+  router.push({ name: 'PaymentChannelAccountEdit', params: { channelId: channelId.value, id: row.id } })
 }
 
 function onChangeStatus(row: any, field = 'status') {
@@ -191,15 +188,17 @@ function handleMoreOperating(command: string, row: any) {
 }
 
 function onPaymentTest(row: any) {
-  const formData = reactive({ amount: '1.00', subject: '支付测试' })
+  const formData = reactive({ amount: '1.00', subject: '测试商品' })
   useFaModal().confirm({
     title: '发起支付测试',
     content: () => h(ElForm, { labelWidth: '100px', class: 'pt-4' }, () => [
-      h(ElFormItem, { label: '子账户ID' }, () => h('span', row.id)),
+      h(ElFormItem, { label: '子账户名称' }, () => h('span', row.name)),
       h(ElFormItem, { label: '支付金额', required: true }, () => h(ElInput, {
         'modelValue': formData.amount,
         'onUpdate:modelValue': (v: string) => formData.amount = v,
         'placeholder': '请输入支付金额（≥0.01）',
+      }, {
+        suffix: () => '元',
       })),
       h(ElFormItem, { label: '商品名称', required: true }, () => h(ElInput, {
         'modelValue': formData.subject,
@@ -209,7 +208,7 @@ function onPaymentTest(row: any) {
         'showWordLimit': true,
       })),
     ]),
-    confirmButtonText: '发起测试',
+    confirmButtonText: '创建订单',
     onConfirm: () => {
       if (!formData.amount || Number(formData.amount) < 0.01) {
         toast.warning('支付金额不能小于 0.01')

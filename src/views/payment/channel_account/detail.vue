@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
 import api from '@/api/modules/payment'
-import eventBus from '@/utils/eventBus'
 
 defineOptions({
   name: 'PaymentChannelAccountDetail',
@@ -10,7 +9,7 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 
-const channelId = computed(() => route.params.channelId as string || '')
+const channelId = computed(() => route.params.channelId as string ?? '')
 const formId = computed(() => route.params.id as string || '')
 const isEdit = computed(() => formId.value !== '')
 const pageTitle = computed(() => isEdit.value ? '编辑通道子账户' : '新增通道子账户')
@@ -123,6 +122,9 @@ const formRules = computed<FormRules>(() => {
 
 // 获取通道配置表单
 async function fetchChannelConfig() {
+  if (!channelId.value) {
+    return router.close({ name: 'PaymentChannel' })
+  }
   loadingConfig.value = true
   try {
     const [configRes, channelRes] = await Promise.all([
@@ -190,7 +192,6 @@ async function onSubmit() {
   const submitData = { ...form.value, config: dynamicFormData.value }
   const apiCall = isEdit.value ? api.channelAccountEdit : api.channelAccountCreate
   await apiCall(submitData)
-  eventBus.emit('get-data-list')
   onCancel()
 }
 
